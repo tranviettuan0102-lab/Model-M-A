@@ -23,6 +23,85 @@ const REPAYMENT_METHOD_LABELS: Record<string, string> = {
   annuity: 'Trả đều hàng năm (Annuity)',
 };
 
+const SelectField = ({ label, value, options, onChange }: any) => (
+  <div className="flex flex-col gap-1">
+    <div className="flex items-center gap-2">
+      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
+      <Info size={12} className="text-slate-400 cursor-help" />
+    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-sm"
+    >
+      {Object.entries(options).map(([key, label]) => (
+        <option key={key} value={key}>
+          {label as string}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+const InputField = ({ label, value, onChange, unit = '%', step = 0.01, description, readOnly = false, currency }: any) => {
+  const isCurrency = unit === '$' || unit === 'VND';
+  const displayUnit = isCurrency ? currency : unit;
+  
+  let displayValue: string;
+  if (isCurrency) {
+    const converted = currency === 'VND' ? value * USD_VND_EXCHANGE_RATE : value;
+    displayValue = converted.toFixed(0);
+  } else if (unit === '%') {
+    displayValue = (value * 100).toFixed(1);
+  } else if (unit === 'm2' || unit === 'Phòng' || unit === 'Năm' || unit === 'Hệ số' || unit === 'Tầng') {
+    displayValue = value.toString();
+  } else {
+    displayValue = value.toString();
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
+        <div className="group relative">
+          <Info size={12} className="text-slate-400 cursor-help" />
+          {description && (
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+              {description}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="relative">
+        <input
+          type="number"
+          step={step}
+          value={displayValue}
+          readOnly={readOnly}
+          onChange={(e) => {
+            const val = parseFloat(e.target.value);
+            if (isCurrency) {
+              const backToUsd = currency === 'VND' ? val / USD_VND_EXCHANGE_RATE : val;
+              onChange(backToUsd);
+            } else if (unit === '%') {
+              onChange(val / 100);
+            } else {
+              onChange(val);
+            }
+          }}
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none font-mono text-sm ${
+            readOnly ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 text-slate-900'
+          }`}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">
+          {displayUnit}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, currency }) => {
   const handleChange = (key: keyof Assumptions, value: any) => {
     const newAssumptions = { ...assumptions, [key]: value };
@@ -68,85 +147,6 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
     }).format(converted);
   };
 
-  const SelectField = ({ label, value, options, onChange }: any) => (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
-        <Info size={12} className="text-slate-400 cursor-help" />
-      </div>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none text-sm"
-      >
-        {Object.entries(options).map(([key, label]) => (
-          <option key={key} value={key}>
-            {label as string}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-
-  const InputField = ({ label, value, onChange, unit = '%', step = 0.01, description, readOnly = false }: any) => {
-    const isCurrency = unit === '$' || unit === 'VND';
-    const displayUnit = isCurrency ? currency : unit;
-    
-    let displayValue: string;
-    if (isCurrency) {
-      const converted = currency === 'VND' ? value * USD_VND_EXCHANGE_RATE : value;
-      displayValue = converted.toFixed(0);
-    } else if (unit === '%') {
-      displayValue = (value * 100).toFixed(1);
-    } else if (unit === 'm2' || unit === 'Phòng' || unit === 'Năm' || unit === 'Hệ số' || unit === 'Tầng') {
-      displayValue = value.toString();
-    } else {
-      displayValue = value.toString();
-    }
-
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
-          <div className="group relative">
-            <Info size={12} className="text-slate-400 cursor-help" />
-            {description && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
-                {description}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="relative">
-          <input
-            type="number"
-            step={step}
-            value={displayValue}
-            readOnly={readOnly}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (isCurrency) {
-                const backToUsd = currency === 'VND' ? val / USD_VND_EXCHANGE_RATE : val;
-                onChange(backToUsd);
-              } else if (unit === '%') {
-                onChange(val / 100);
-              } else {
-                onChange(val);
-              }
-            }}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all outline-none font-mono text-sm ${
-              readOnly ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 text-slate-900'
-            }`}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">
-            {displayUnit}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
@@ -171,6 +171,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="m2"
               step={100}
               description="Tổng diện tích khu đất thực hiện dự án."
+              currency={currency}
             />
             <InputField 
               label="Hệ số sử dụng đất (FAR)" 
@@ -179,12 +180,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="Hệ số"
               step={0.1}
               description="Tỷ lệ giữa tổng diện tích sàn xây dựng trên diện tích khu đất."
+              currency={currency}
             />
             <InputField 
               label="Mật độ xây dựng" 
               value={assumptions.constructionDensity} 
               onChange={(v: number) => handleChange('constructionDensity', v)} 
               description="Tỷ lệ diện tích chiếm đất của các công trình kiến trúc trên tổng diện tích khu đất."
+              currency={currency}
             />
           </div>
           <div className="space-y-6 pt-11">
@@ -195,12 +198,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="Tầng"
               step={1}
               description="Số tầng cao tối đa được phép xây dựng."
+              currency={currency}
             />
             <InputField 
               label="Hiệu suất sử dụng sàn" 
               value={assumptions.floorEfficiency} 
               onChange={(v: number) => handleChange('floorEfficiency', v)} 
               description="Tỷ lệ diện tích thương phẩm (Net Area) trên tổng diện tích sàn (GFA)."
+              currency={currency}
             />
             <InputField 
               label="Diện tích phòng trung bình" 
@@ -209,6 +214,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="m2"
               step={1}
               description="Diện tích trung bình của một phòng khách sạn hoặc căn hộ."
+              currency={currency}
             />
           </div>
           <div className="bg-slate-50 p-6 rounded-xl flex flex-col justify-center">
@@ -245,6 +251,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={10}
               description="Suất vốn đầu tư xây dựng cho 1m2 sàn (GFA) theo QĐ 826/QĐ-BXD 2024."
+              currency={currency}
             />
             <div className="flex flex-wrap gap-2 mt-2">
               <p className="text-[10px] text-slate-400 w-full mb-1">Tham chiếu 826/QĐ-BXD 2024:</p>
@@ -274,6 +281,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={100}
               description="Chi phí tiền sử dụng đất hoặc thuê đất tính trên 1m2 đất."
+              currency={currency}
             />
           </div>
           <div className="space-y-6 pt-11">
@@ -282,12 +290,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               value={assumptions.otherCostRatio} 
               onChange={(v: number) => handleChange('otherCostRatio', v)} 
               description="Chi phí quản lý dự án, tư vấn, và các chi phí khác (% của chi phí xây dựng)."
+              currency={currency}
             />
             <InputField 
               label="Tỷ lệ dự phòng phí" 
               value={assumptions.contingencyRatio} 
               onChange={(v: number) => handleChange('contingencyRatio', v)} 
               description="Dự phòng cho các yếu tố phát sinh và trượt giá (% của tổng mức đầu tư)."
+              currency={currency}
             />
           </div>
           <div className="bg-slate-50 p-6 rounded-xl flex flex-col justify-center">
@@ -341,6 +351,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             unit="Năm"
             step={1}
             description="Số năm cần thiết để hoàn thành xây dựng. Doanh thu vận hành (Khách sạn, Mall, Office) chỉ bắt đầu sau thời gian này."
+            currency={currency}
           />
         </div>
         <div className="space-y-6 pt-11">
@@ -352,6 +363,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="Năm"
               step={1}
               description="Năm bắt đầu phát sinh doanh thu bán hàng (Chung cư, Condotel, Biệt thự). Năm 0 là năm hiện tại."
+              currency={currency}
             />
           )}
         </div>
@@ -389,6 +401,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="Phòng"
               step={10}
               description="Tổng số phòng kinh doanh của khách sạn hoặc condotel."
+              currency={currency}
             />
             <InputField 
               label="Giá phòng trung bình (ADR)" 
@@ -397,12 +410,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={10}
               description="Giá thuê phòng trung bình mỗi đêm."
+              currency={currency}
             />
             <InputField 
               label="Công suất lấp đầy" 
               value={assumptions.hotelOccupancy} 
               onChange={(v: number) => handleChange('hotelOccupancy', v)} 
               description="Tỷ lệ phòng có khách thuê trung bình năm."
+              currency={currency}
             />
           </div>
         )}
@@ -418,6 +433,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="m2"
               step={100}
               description="Tổng diện tích sàn thương mại có thể cho thuê."
+              currency={currency}
             />
             <InputField 
               label="Giá thuê trung bình" 
@@ -426,12 +442,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={5}
               description="Giá thuê trung bình mỗi m2 sàn thương mại mỗi tháng."
+              currency={currency}
             />
             <InputField 
               label="Công suất lấp đầy" 
               value={assumptions.mallOccupancy} 
               onChange={(v: number) => handleChange('mallOccupancy', v)} 
               description="Tỷ lệ diện tích sàn có khách thuê trung bình."
+              currency={currency}
             />
           </div>
         )}
@@ -447,6 +465,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="m2"
               step={100}
               description="Tổng diện tích sàn văn phòng cho thuê."
+              currency={currency}
             />
             <InputField 
               label="Giá thuê văn phòng" 
@@ -455,12 +474,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={5}
               description="Giá thuê trung bình mỗi m2 sàn văn phòng mỗi tháng."
+              currency={currency}
             />
             <InputField 
               label="Công suất lấp đầy" 
               value={assumptions.officeOccupancy} 
               onChange={(v: number) => handleChange('officeOccupancy', v)} 
               description="Tỷ lệ diện tích sàn văn phòng có khách thuê trung bình."
+              currency={currency}
             />
           </div>
         )}
@@ -476,6 +497,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="m2"
               step={500}
               description="Tổng diện tích căn hộ, condotel hoặc biệt thự để bán."
+              currency={currency}
             />
             <InputField 
               label="Giá bán trung bình" 
@@ -484,6 +506,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="$"
               step={100}
               description="Giá bán trung bình mỗi m2 diện tích thương phẩm."
+              currency={currency}
             />
             <InputField 
               label="Thời gian bán hàng" 
@@ -492,6 +515,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
               unit="Năm"
               step={1}
               description="Tổng số năm thực hiện việc bán hàng."
+              currency={currency}
             />
             
             <div className="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -537,18 +561,21 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             value={assumptions.revenueGrowth} 
             onChange={(v: number) => handleChange('revenueGrowth', v)} 
             description="Tốc độ tăng trưởng doanh thu dự kiến hàng năm trong giai đoạn dự báo."
+            currency={currency}
           />
           <InputField 
             label="Biên lợi nhuận gộp" 
             value={assumptions.grossMargin} 
             onChange={(v: number) => handleChange('grossMargin', v)} 
             description="Tỷ lệ lợi nhuận còn lại sau khi trừ giá vốn hàng bán (COGS)."
+            currency={currency}
           />
           <InputField 
             label="Tỷ lệ Chi phí vận hành" 
             value={assumptions.opexRatio} 
             onChange={(v: number) => handleChange('opexRatio', v)} 
             description="Tỷ lệ chi phí bán hàng và quản lý doanh nghiệp trên tổng doanh thu."
+            currency={currency}
           />
         </div>
 
@@ -559,18 +586,21 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             value={assumptions.wacc} 
             onChange={(v: number) => handleChange('wacc', v)} 
             description="Chi phí sử dụng vốn bình quân gia quyền, dùng làm tỷ lệ chiết khấu dòng tiền."
+            currency={currency}
           />
           <InputField 
             label="Tỷ lệ vay" 
             value={assumptions.debtRatio} 
             onChange={(v: number) => handleChange('debtRatio', v)} 
             description="Tỷ lệ nợ vay trên tổng giá trị đầu tư ban đầu."
+            currency={currency}
           />
           <InputField 
             label="Lãi suất vay" 
             value={assumptions.interestRate} 
             onChange={(v: number) => handleChange('interestRate', v)} 
             description="Lãi suất vay ngân hàng hàng năm cho khoản nợ của dự án."
+            currency={currency}
           />
           <InputField 
             label="Thời hạn vay" 
@@ -579,6 +609,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             unit="Năm"
             step={1}
             description="Tổng thời gian thực hiện trả nợ vay."
+            currency={currency}
           />
           <SelectField 
             label="Hình thức trả nợ" 
@@ -593,6 +624,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             unit="Năm"
             step={1}
             description="Thời gian chỉ trả lãi, chưa phải trả gốc (thường áp dụng trong giai đoạn xây dựng)."
+            currency={currency}
           />
         </div>
 
@@ -605,6 +637,7 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             unit="$" 
             step={100000} 
             description="Tổng chi phí đầu tư hoặc giá mua lại dự án ban đầu."
+            currency={currency}
           />
           <InputField 
             label="Giá trị cộng hưởng" 
@@ -613,12 +646,14 @@ export const AssumptionPanel: React.FC<Props> = ({ assumptions, onChange, curren
             unit="$" 
             step={10000} 
             description="Giá trị tăng thêm dự kiến từ việc tối ưu hóa vận hành hoặc kết hợp hệ sinh thái."
+            currency={currency}
           />
           <InputField 
             label="Tăng trưởng vĩnh viễn" 
             value={assumptions.terminalGrowth} 
             onChange={(v: number) => handleChange('terminalGrowth', v)} 
             description="Tỷ lệ tăng trưởng dòng tiền ổn định mãi mãi sau giai đoạn dự báo (thường từ 2-3%)."
+            currency={currency}
           />
         </div>
       </div>

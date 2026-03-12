@@ -11,6 +11,9 @@ import { FeasibilityDashboard } from './components/FeasibilityDashboard';
 import { MAAnalysis } from './components/MAAnalysis';
 import { DebtSchedule } from './components/DebtSchedule';
 
+import { exportToExcel, exportToPDF } from './utils/export';
+import { Download, FileSpreadsheet, FileText } from 'lucide-react';
+
 type Tab = 'dashboard' | 'assumptions' | 'financials' | 'valuation' | 'ma' | 'debt';
 export type Currency = 'USD' | 'VND';
 
@@ -130,6 +133,24 @@ export default function App() {
           </div>
           
           <div className="flex gap-4 items-center">
+            <div className="flex gap-2 mr-4">
+              <button 
+                onClick={() => exportToExcel(projections, assumptions, currency)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase rounded-lg hover:bg-slate-50 transition-all"
+                title="Xuất Excel"
+              >
+                <FileSpreadsheet size={14} className="text-emerald-600" />
+                Excel
+              </button>
+              <button 
+                onClick={() => exportToPDF(projections, currency)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase rounded-lg hover:bg-slate-50 transition-all"
+                title="Xuất PDF"
+              >
+                <FileText size={14} className="text-rose-600" />
+                PDF
+              </button>
+            </div>
             <div className="flex bg-white/10 p-1 rounded-lg">
               <button 
                 onClick={() => setCurrency('USD')}
